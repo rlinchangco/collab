@@ -35,7 +35,7 @@ def multi_parse(data_file, header_row=0):
 
 def find_match(match_map,matchFile,topo):
     out = open(matchFile+topo[:-4]+"added.txt",'w')
-    header = ['Class','Ancestral_state','IA','IB','pwd.AB','pd.A','pwd.B','Topology','Number Donor Tips','Number Recipient Tips','Total number of tips','Position','Pair']
+    header = ['Class','Ancestral_state','IA','IB','pwd.AB','pd.A','pwd.B','Topology','Number Donor Tips','Number Recipient Tips','Total number of tips','Pair']
     new_header = ['Class','Ancestral_state','IA','IB','pwd.AB','pd.A','pwd.B','Topology','Number Donor Tips','Number Recipient Tips','Total number of tips','Position','Pair','Donor_Date','Recipient_Date','Estimated_Transmission_Time_to_donor','Estimated_Transmission_Time_to_recipient','Pair','donor_diff_date','recipient_diff_date']
     outheader = '\t'.join(new_header)+'\n'
     out.write(outheader)
