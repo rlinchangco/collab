@@ -71,6 +71,18 @@ def compare_seqs(seq1,seq2):
     return insertion_count,deletion_count,substitution_count,length
 
 
+def plot_histo(df,outPath):
+    """
+    """
+    import matplotlib.pyplot as plt
+    fig = plt.figure(figsize=(17,17))
+    plt.hist(df['Sequence_Length'])
+    #plt.show() 
+    figure_file = "%s%s.png" % (outPath,'lengthHisto')
+    fig.savefig(figure_file,dpi=fig.dpi)
+    plt.close('all')    
+
+
 def main(argv):
     inputPath = ''
 
@@ -100,6 +112,8 @@ def main(argv):
     #print(file_list)
     out = open(outPath+'statsoutfile.txt','w')
     out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
+    df_row = 0
+    df = pd.DataFrame(columns=['Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
     for mafft_file in file_list:
         this_fasta = []
         for seq_id,seq in readFasta(mafft_file):
@@ -108,8 +122,12 @@ def main(argv):
             this_fasta.append((seq_id,seq))
         this_fasta.sort()                           # sort for order
         insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+        df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
+        df_row += 1
         outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
         out.write(outline)
+    plot_histo(df, outPath)
+    #df.to_excel()      # need excelwriter like openpyxl
     out.flush()
     out.close()
 
