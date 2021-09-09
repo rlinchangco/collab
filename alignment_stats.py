@@ -91,8 +91,8 @@ def main(argv):
     print('Output path is ', outPath)
     file_list = globIt(inputPath,['.mafft'])
     #print(file_list)
-    # out = open(outPath+'statsoutfile.txt','w')
-    # out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
+    out = open(outPath+'statsoutfile.txt','w')
+    out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
     for mafft_file in file_list:
         this_fasta = []
         for seq_id,seq in parse_mafft_file(mafft_file):
