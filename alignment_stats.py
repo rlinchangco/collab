@@ -2,7 +2,7 @@
 
 import os,csv,sys,getopt,collections
 import pandas as pd
-
+import openpyxl
 
 def globIt(crawlDir,extensions=[]):
     """
@@ -125,6 +125,7 @@ def main(argv):
     out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
     df_row = 0
     df = pd.DataFrame(columns=['Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
+    consensus_id = None
     for mafft_file in file_list:
         this_fasta = []
         for seq_id,seq in readFasta(mafft_file):
@@ -135,13 +136,15 @@ def main(argv):
         insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
         df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
         df_row += 1
+        consensus_id = this_fasta[0][0][1:]
         outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
         out.write(outline)
     for col in df.columns.to_list():
         if 'ID' not in col:
             plot_histo(df[col], outPath, col)
             plotly_plot(df, outPath, col)
-    #df.to_excel()      # need excelwriter like openpyxl
+    df_out = f"{outPath}{consensus_id}_statsoutfile.xlsx"
+    df.to_excel(df_out,index=False)      # need excelwriter like openpyxl
     out.flush()
     out.close()
 
