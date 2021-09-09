@@ -65,26 +65,21 @@ def compare_seqs(seq1,seq2):
 
 
 def main(argv):
-    """
-    time python3 alignment_stats.py -i /path/to/file.csv -m /path/to/topologies/
-    """
     inputPath = ''
-    outfile = ''
 
     try:
         opts, args = getopt.getopt(
-            argv, "hi:o:", ["inputPath=", "outfile="])
+            argv, "hi:", ["inputPath="])
     except getopt.GetoptError:
-        print('alignment_stats.py -i <inputPath> -o <outfile> \n\n')
+        print('alignment_stats.py -i <inputPath>\n\n')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print('alignment_stats.py -i <inputPath> -o <outfile>\n\n')
+            print('alignment_stats.py -i <inputPath>\n\n')
+            print('time python3 alignment_stats.py -i /path/to/mafft_files/')
             sys.exit()
         elif opt in ("-i", "--inputPath"):
             inputPath = arg
-        elif opt in ("-o", "--outfile"):
-            outfile = arg
     
     print('Input path is ', inputPath)
     # add trailing directory separator if needed
@@ -95,7 +90,7 @@ def main(argv):
         os.makedirs(outPath)
     print('Output path is ', outPath)
     file_list, newest_file = globIt(inputPath,['.mafft'])
-    out = open(outPath+'outfile.txt','w')
+    out = open(outPath+'statsoutfile.txt','w')
     out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
     for mafft_file in file_list:                            # parallelize here
         this_fasta = []
