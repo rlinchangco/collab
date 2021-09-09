@@ -47,6 +47,10 @@ def compare_seqs(seq1,seq2):
     insertion_count = 0
     deletion_count = 0
     substitution_count = 0
+    length = len(seq1)
+    if length != len(seq2):
+        print("NOT SAME LENGTH")
+        length = [len(seq1),len(seq2)]
     for a, b in zip(seq1, seq2):
         a = a.lower()
         b = b.lower()
@@ -57,7 +61,7 @@ def compare_seqs(seq1,seq2):
                 deletion_count += 1
             else:
                 substitution_count += 1
-    return insertion_count,deletion_count,substitution_count
+    return insertion_count,deletion_count,substitution_count,length
 
 
 def main(argv):
@@ -92,7 +96,7 @@ def main(argv):
     print('Output path is ', outPath)
     file_list, newest_file = globIt(inputPath,['.mafft'])
     out = open(outPath+'outfile.txt','w')
-    out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\n')
+    out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
     for mafft_file in file_list:                            # parallelize here
         this_fasta = []
         for seq_id,seq in parse_mafft_file(mafft_file):
@@ -100,8 +104,8 @@ def main(argv):
                seq_id = f"0{seq_id[1:]}"
             this_fasta.append((seq_id,seq))
         this_fasta.sort()
-        insertion_count,deletion_count,substitution_count = compare_seqs(this_fasta[0][1],this_fasta[1][1])
-        outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count])+'\n'
+        insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+        outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length])+'\n'
         out.write(outline)
     out.flush()
     out.close()
