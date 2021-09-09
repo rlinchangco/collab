@@ -71,16 +71,27 @@ def compare_seqs(seq1,seq2):
     return insertion_count,deletion_count,substitution_count,length
 
 
-def plot_histo(df,outPath):
+def plot_histo(x,outPath,col):
     """
     """
     import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(17,17))
-    plt.hist(df['Sequence_Length'])
+    plt.hist(x)
+    plt.title(f"{col} Histogram")
+    plt.xlabel(f"{col}")
+    plt.ylabel('Frequency')
     #plt.show() 
-    figure_file = "%s%s.png" % (outPath,'lengthHisto')
+    figure_file = "%s%s.png" % (outPath,col)
     fig.savefig(figure_file,dpi=fig.dpi)
     plt.close('all')    
+
+
+def plotly_plot(df,outPath,col):
+    """
+    """
+    import plotly.express as px
+    fig = px.histogram(df, x=col)
+    fig.write_html(f"{outPath}{col}.html")
 
 
 def main(argv):
@@ -126,7 +137,10 @@ def main(argv):
         df_row += 1
         outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
         out.write(outline)
-    plot_histo(df, outPath)
+    for col in df.columns.to_list():
+        if 'ID' not in col:
+            plot_histo(df[col], outPath, col)
+            plotly_plot(df, outPath, col)
     #df.to_excel()      # need excelwriter like openpyxl
     out.flush()
     out.close()
