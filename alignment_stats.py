@@ -19,6 +19,13 @@ def globIt(crawlDir,extensions=[]):
     return list_of_files#, latest_file
 
 
+def readFasta(fastaFile):
+    from Bio import SeqIO
+    fasta_sequences = SeqIO.parse(open(fastaFile),'fasta')
+    for fasta in fasta_sequences:
+        yield fasta.id, str(fasta.seq)
+
+
 def parse_mafft_file(mafft_file):
     """
     parses mafft pairwise alignment fasta file and yields fasta tuple
@@ -95,14 +102,13 @@ def main(argv):
     out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
     for mafft_file in file_list:
         this_fasta = []
-        for seq_id,seq in parse_mafft_file(mafft_file):
-            #print(seq_id)
-            if 'consensus' in seq_id.lower():
-               seq_id = f"0{seq_id[1:]}"
+        for seq_id,seq in readFasta(mafft_file):
+            if 'consensus' in seq_id.lower():       # modify to force order
+               seq_id = f"0{seq_id}"
             this_fasta.append((seq_id,seq))
-        this_fasta.sort()
+        this_fasta.sort()                           # sort for order
         insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
-        outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length])+'\n'
+        outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
         out.write(outline)
     out.flush()
     out.close()
