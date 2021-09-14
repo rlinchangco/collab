@@ -58,6 +58,19 @@ def compare_seqs(seq1,seq2):
     if length != len(seq2):
         print("NOT SAME LENGTH")
         length = [len(seq1),len(seq2)]
+    apreceding = 0
+    atrailing = 0
+    bpreceding = 0
+    btrailing = 0    
+    # account for preceding or trailing "gaps"    
+    if seq1.startswith('-'):
+        apreceding = len(seq1) - len(seq1.lstrip('-'))
+    if seq1.endswith('-'):
+        atrailing = len(seq1) - len(seq1.rstrip('-'))
+    if seq2.startswith('-'):
+        bpreceding = len(seq2) - len(seq2.lstrip('-'))
+    if seq2.endswith('-'):
+        btrailing = len(seq2) - len(seq2.rstrip('-'))
     for a, b in zip(seq1, seq2):
         a = a.lower()
         b = b.lower()
@@ -68,7 +81,10 @@ def compare_seqs(seq1,seq2):
                 deletion_count += 1
             else:
                 substitution_count += 1
-    return insertion_count,deletion_count,substitution_count,length
+    insertion_count = insertion_count - apreceding - atrailing
+    deletion_count = deletion_count - bpreceding - btrailing
+    total_length = length - apreceding - atrailing - bpreceding - btrailing
+    return insertion_count,deletion_count,substitution_count,total_length
 
 
 def plot_histo(x,outPath,col):
