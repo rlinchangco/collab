@@ -137,8 +137,9 @@ def main(argv):
     print('Output path is ', outPath)
     file_list = globIt(inputPath,['.mafft'])
     #print(file_list)
-    out = open(outPath+'statsoutfile.txt','w')
-    out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
+    # REDUNDANT OUTPUT
+    # out = open(outPath+'statsoutfile.txt','w')
+    # out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
     df_row = 0
     df = pd.DataFrame(columns=['Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
     consensus_id = None
@@ -153,16 +154,18 @@ def main(argv):
         df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
         df_row += 1
         consensus_id = this_fasta[0][0][1:]
-        outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
-        out.write(outline)
+        # outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
+        # out.write(outline)
     for col in df.columns.to_list():
         if 'ID' not in col:
             plot_histo(df[col], outPath, col)
             plotly_plot(df, outPath, col)
-    df_out = f"{outPath}{consensus_id}_statsoutfile.xlsx"
-    df.to_excel(df_out,index=False)      # need excelwriter like openpyxl
-    out.flush()
-    out.close()
+    # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
+    df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
+    # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl
+    df.to_csv(df_csv,index=False)      # need excelwriter like openpyxl
+    # out.flush()
+    # out.close()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
