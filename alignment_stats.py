@@ -146,7 +146,7 @@ def main(argv):
         this_fasta = []
         for seq_id,seq in readFasta(mafft_file):
             if 'consensus' in seq_id.lower():       # modify to force order
-               seq_id = f"0{seq_id}"
+               seq_id = f"!{seq_id}"
             this_fasta.append((seq_id,seq))
         this_fasta.sort()                           # sort for order
         insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
