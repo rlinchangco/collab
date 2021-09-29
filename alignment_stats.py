@@ -110,14 +110,29 @@ def plotly_plot(df,outPath,col):
     fig.write_html(f"{outPath}{col}.html")
 
 
+def read_map_consensus(mafft_file,this_fasta,df,df_row):
+    """
+    reads 'mafft' files and modifies dataframe
+    """
+    for seq_id,seq in readFasta(mafft_file):
+        if 'consensus' in seq_id.lower():       # modify to force order
+            seq_id = f"!{seq_id}"
+        this_fasta.append((seq_id,seq))
+    this_fasta.sort()                           # sort for order
+    insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+    df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
+    df_row += 1
+    consensus_id = this_fasta[0][0][1:]
+
+
 def main(argv):
     inputPath = ''
-
+    desired_year = None
     try:
         opts, args = getopt.getopt(
-            argv, "hi:", ["inputPath="])
+            argv, "hi:y:", ["inputPath=", "desiredYear="])
     except getopt.GetoptError:
-        print('alignment_stats.py -i <inputPath>\n\n')
+        print('alignment_stats.py -i <inputPath> -y <desiredYear>\n\n')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
@@ -126,7 +141,9 @@ def main(argv):
             sys.exit()
         elif opt in ("-i", "--inputPath"):
             inputPath = arg
-    
+        elif opt in ("-y", "--desiredYear"):
+            desired_year = arg
+
     print('Input path is ', inputPath)
     # add trailing directory separator if needed
     if not inputPath.endswith('/'):
@@ -145,17 +162,24 @@ def main(argv):
     consensus_id = None
     for mafft_file in file_list:
         this_fasta = []
-        for seq_id,seq in readFasta(mafft_file):
-            if 'consensus' in seq_id.lower():       # modify to force order
-               seq_id = f"!{seq_id}"
-            this_fasta.append((seq_id,seq))
-        this_fasta.sort()                           # sort for order
-        insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
-        df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
-        df_row += 1
-        consensus_id = this_fasta[0][0][1:]
-        # outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
-        # out.write(outline)
+        year = int(mafft_file.split('.')[2])
+        if year:
+            if year <= desired_year:
+                read_map_consensus(mafft_file,this_fasta,df,df_row)
+            #REFACTORED INTO read_map_consensus
+            # for seq_id,seq in readFasta(mafft_file):
+            #     if 'consensus' in seq_id.lower():       # modify to force order
+            #         seq_id = f"!{seq_id}"
+            #     this_fasta.append((seq_id,seq))
+            # this_fasta.sort()                           # sort for order
+            # insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+            # df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
+            # df_row += 1
+            # consensus_id = this_fasta[0][0][1:]
+            # outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
+            # out.write(outline)
+        else:
+            read_map_consensus(mafft_file,this_fasta,df,df_row)
     for col in df.columns.to_list():
         if 'ID' not in col:
             plot_histo(df[col], outPath, col)
