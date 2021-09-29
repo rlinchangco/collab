@@ -164,7 +164,7 @@ def main(argv):
         this_fasta = []
         year = int(mafft_file.split('.')[2])
         if year:
-            if year <= desired_year:
+            if year <= int(desired_year):
                 read_map_consensus(mafft_file,this_fasta,df,df_row)
             #REFACTORED INTO read_map_consensus
             # for seq_id,seq in readFasta(mafft_file):
