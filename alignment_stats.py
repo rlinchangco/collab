@@ -13,7 +13,7 @@ def globIt(crawlDir,extensions=[]):
     list_of_files = []
     for extension in extensions:
         filePath = '{}*{}'.format(crawlDir,extension)
-        print(filePath)
+        print(f"Files to parsed from:\n{filePath}")
         list_of_files += glob.glob(filePath)
     #latest_file = max(list_of_files, key=os.path.getctime)
     return list_of_files#, latest_file
