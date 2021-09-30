@@ -153,7 +153,7 @@ def main(argv):
         df.loc[df_row] = [year,this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
         df_row += 1
         consensus_id = this_fasta[0][0][1:]
-        outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
+        outline = '\t'.join([this_fasta[1][0],consensus_id,str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
     for col in df.columns.to_list():
         if 'ID' not in col:
             plot_histo(df[col], outPath, col)
@@ -161,8 +161,7 @@ def main(argv):
     print(df.shape)
     if desired_year:
         df = df[df.Year <= desired_year]
-        print(df.shape)
-        print(df)
+        print(f"Filtered by {desired_year}\nRows/Columns remaining:{df.shape}")
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
     df.to_csv(df_csv,index=False)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
