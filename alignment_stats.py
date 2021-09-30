@@ -110,21 +110,6 @@ def plotly_plot(df,outPath,col):
     fig.write_html(f"{outPath}{col}.html")
 
 
-def read_map_consensus(mafft_file,this_fasta,df,df_row):
-    """
-    reads 'mafft' files and modifies dataframe
-    """
-    for seq_id,seq in readFasta(mafft_file):
-        if 'consensus' in seq_id.lower():       # modify to force order
-            seq_id = f"!{seq_id}"
-        this_fasta.append((seq_id,seq))
-    this_fasta.sort()                           # sort for order
-    insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
-    df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
-    df_row += 1
-    consensus_id = this_fasta[0][0][1:]
-
-
 def main(argv):
     inputPath = ''
     desired_year = None
@@ -137,59 +122,52 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-h':
             print('alignment_stats.py -i <inputPath>\n\n')
-            print('time python3 alignment_stats.py -i /path/to/mafft_files/')
+            print('time python3 alignment_stats.py -i /path/to/mafft_files/ -y year')
             sys.exit()
         elif opt in ("-i", "--inputPath"):
             inputPath = arg
         elif opt in ("-y", "--desiredYear"):
-            desired_year = arg
+            desired_year = int(arg)
 
     print('Input path is ', inputPath)
     # add trailing directory separator if needed
     if not inputPath.endswith('/'):
         inputPath += '/'
-    outPath = f"{inputPath}/stats/"
+    outPath = f"{inputPath}stats/"
     if not os.path.exists(outPath):
         os.makedirs(outPath)
     print('Output path is ', outPath)
     file_list = globIt(inputPath,['.mafft'])
-    #print(file_list)
-    # REDUNDANT OUTPUT
-    # out = open(outPath+'statsoutfile.txt','w')
-    # out.write('Query_ID\tConsensus_ID\tInsertions\tDeletions\tSubstitutions\tSequence_Length\n')
     df_row = 0
-    df = pd.DataFrame(columns=['Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
+    df = pd.DataFrame(columns=['Year','Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
     consensus_id = None
     for mafft_file in file_list:
         this_fasta = []
         year = int(mafft_file.split('.')[2])
-        if year:
-            if year <= int(desired_year):
-                read_map_consensus(mafft_file,this_fasta,df,df_row)
-            #REFACTORED INTO read_map_consensus
-            # for seq_id,seq in readFasta(mafft_file):
-            #     if 'consensus' in seq_id.lower():       # modify to force order
-            #         seq_id = f"!{seq_id}"
-            #     this_fasta.append((seq_id,seq))
-            # this_fasta.sort()                           # sort for order
-            # insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
-            # df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
-            # df_row += 1
-            # consensus_id = this_fasta[0][0][1:]
-            # outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
-            # out.write(outline)
-        else:
-            read_map_consensus(mafft_file,this_fasta,df,df_row)
+        for seq_id,seq in readFasta(mafft_file):
+            if 'consensus' in seq_id.lower():       # modify to force order
+                seq_id = f"!{seq_id}"
+            this_fasta.append((seq_id,seq))
+        this_fasta.sort()                           # sort for order
+        insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+        df.loc[df_row] = [year,this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
+        df_row += 1
+        consensus_id = this_fasta[0][0][1:]
+        outline = '\t'.join([this_fasta[1][0],this_fasta[0][0],str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
     for col in df.columns.to_list():
         if 'ID' not in col:
             plot_histo(df[col], outPath, col)
             plotly_plot(df, outPath, col)
-    # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
+    print(df.shape)
+    if desired_year:
+        df = df[df.Year <= desired_year]
+        print(df.shape)
+        print(df)
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
+    df.to_csv(df_csv,index=False)
+    # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
     # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl
-    df.to_csv(df_csv,index=False)      # need excelwriter like openpyxl
-    # out.flush()
-    # out.close()
+    
 
 if __name__ == "__main__":
     main(sys.argv[1:])
