@@ -164,9 +164,6 @@ def fasta_stats(file_list,outPath,qualifier=None):
             plot_histo(df[col], outPath, col)
             plotly_plot(df, outPath, col)
     print(df.shape)
-    if desired_year:
-        df = df[df.Year <= desired_year]
-        print(f"Filtered by {desired_year}\nRows/Columns remaining:{df.shape}")
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
     df.to_csv(df_csv,index=False)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
