@@ -110,37 +110,11 @@ def plotly_plot(df,outPath,col):
     fig.write_html(f"{outPath}{col}.html")
 
 
-def main(argv):
-    inputPath = ''
-    desired_year = None
-    try:
-        opts, args = getopt.getopt(
-            argv, "hi:y:", ["inputPath=", "desiredYear="])
-    except getopt.GetoptError:
-        print('alignment_stats.py -i <inputPath> -y <desiredYear>\n\n')
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print('alignment_stats.py -i <inputPath>\n\n')
-            print('time python3 alignment_stats.py -i /path/to/mafft_files/ -y year')
-            sys.exit()
-        elif opt in ("-i", "--inputPath"):
-            inputPath = arg
-        elif opt in ("-y", "--desiredYear"):
-            desired_year = int(arg)
-
-    print('Input path is ', inputPath)
-    # add trailing directory separator if needed
-    if not inputPath.endswith('/'):
-        inputPath += '/'
-    outPath = f"{inputPath}stats/"
-    if not os.path.exists(outPath):
-        os.makedirs(outPath)
-    print('Output path is ', outPath)
-    file_list = globIt(inputPath,['.mafft'])
+def mafft_stats(file_list,desired_year,outPath):
+    """
+    """
     df_row = 0
     df = pd.DataFrame(columns=['Year','Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
-    consensus_id = None
     for mafft_file in file_list:
         this_fasta = []
         year = int(mafft_file.split('.')[2])
@@ -165,7 +139,76 @@ def main(argv):
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
     df.to_csv(df_csv,index=False)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
-    # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl
+    # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl    
+
+
+def fasta_stats(file_list,outPath,qualifier=None):
+    """
+    """
+    df_row = 0
+    df = pd.DataFrame(columns=['Query_ID','Mapped_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
+    for fasta_file in file_list:
+        this_fasta = []
+        for seq_id,seq in readFasta(fasta_file):
+            if '2002' in seq_id.lower():       # modify to force order
+                seq_id = f"!{seq_id}"
+            this_fasta.append((seq_id,seq))
+        this_fasta.sort()                           # sort for order
+        insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+        df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
+        df_row += 1
+        consensus_id = this_fasta[0][0][1:]
+        outline = '\t'.join([this_fasta[1][0],consensus_id,str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
+    for col in df.columns.to_list():
+        if 'ID' not in col:
+            plot_histo(df[col], outPath, col)
+            plotly_plot(df, outPath, col)
+    print(df.shape)
+    if desired_year:
+        df = df[df.Year <= desired_year]
+        print(f"Filtered by {desired_year}\nRows/Columns remaining:{df.shape}")
+    df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
+    df.to_csv(df_csv,index=False)
+    # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
+    # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl 
+
+
+def main(argv):
+    inputPath = ''
+    desired_year = None
+    file_end = 'mafft'
+
+    try:
+        opts, args = getopt.getopt(
+            argv, "hi:y:f:", ["inputPath=", "desiredYear=", "fileEnding="])
+    except getopt.GetoptError:
+        print('alignment_stats.py -i <inputPath> -y <desiredYear>\n\n')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print('alignment_stats.py -i <inputPath>\n\n')
+            print('time python3 alignment_stats.py -i /path/to/mafft_files/ -y year')
+            sys.exit()
+        elif opt in ("-i", "--inputPath"):
+            inputPath = arg
+        elif opt in ("-y", "--desiredYear"):
+            desired_year = int(arg)
+        elif opt in ("-f", "--fileEnding"):
+            file_end = arg
+
+    print('Input path is ', inputPath)
+    # add trailing directory separator if needed
+    if not inputPath.endswith('/'):
+        inputPath += '/'
+    outPath = f"{inputPath}stats/"
+    if not os.path.exists(outPath):
+        os.makedirs(outPath)
+    print('Output path is ', outPath)
+    file_list = globIt(inputPath,[file_end])
+    if file_end == 'mafft':
+        mafft_stats(file_list,desired_year,outPath)
+    elif file_end == 'fasta':
+        fasta_stats(file_list,outPath)
     
 
 if __name__ == "__main__":
