@@ -132,7 +132,7 @@ def mafft_stats(file_list,desired_year,outPath,distance_metric):
                 seq_id = f"!{seq_id}"
             this_fasta.append((seq_id,seq))
         this_fasta.sort()                           # sort for order
-        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1],,distance_metric)
+        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1],distance_metric)
         df.loc[df_row] = [year,this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var]
         df_row += 1
         consensus_id = this_fasta[0][0][1:]
@@ -146,6 +146,7 @@ def mafft_stats(file_list,desired_year,outPath,distance_metric):
         df = df[df.Year <= desired_year]
         print(f"Filtered by {desired_year}\nRows/Columns remaining:{df.shape}")
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
+    stats = df.describe()
     df.to_csv(df_csv,index=False)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
     # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl    
