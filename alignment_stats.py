@@ -92,8 +92,8 @@ def compare_seqs(seq1,seq2,distance_metric):
     else:
         print("NO DISTANCE SPECIFIED, DEFAULTING TO HAMMING")
         distance = insertion_count+deletion_count+substitution_count
-    distance_var = distance_ham*(total_length - distance_ham)/total_length
-    return insertion_count,deletion_count,substitution_count,total_length,distance_ham,distance_var
+    distance_var = distance*(total_length - distance)/total_length
+    return insertion_count,deletion_count,substitution_count,total_length,distance,distance_var
 
 
 def plot_histo(x,outPath,col):
@@ -146,8 +146,13 @@ def mafft_stats(file_list,desired_year,outPath,distance_metric):
         df = df[df.Year <= desired_year]
         print(f"Filtered by {desired_year}\nRows/Columns remaining:{df.shape}")
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
+    for col in df.columns[2:]:
+        df[col] = pd.to_numeric(df[col])
     stats = df.describe()
-    df.to_csv(df_csv,index=False)
+    stats.insert(0, df.columns[1], 'Combined')
+    stats.insert(0, df.columns[0], 'Combined')
+    new_df = pd.concat([df,stats])
+    new_df.to_csv(df_csv)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
     # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl    
 
@@ -175,7 +180,13 @@ def fasta_stats(file_list,outPath,distance_metric,qualifier=None):
             plotly_plot(df, outPath, col)
     print(df.shape)
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
-    df.to_csv(df_csv,index=False)
+    for col in df.columns[2:]:
+        df[col] = pd.to_numeric(df[col])
+    stats = df.describe()
+    stats.insert(0, df.columns[1], 'Combined')
+    stats.insert(0, df.columns[0], 'Combined')
+    new_df = pd.concat([df,stats])
+    new_df.to_csv(df_csv)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
     # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl 
 
@@ -188,7 +199,7 @@ def main(argv):
 
     try:
         opts, args = getopt.getopt(
-            argv, "hiy:f:d:", ["inputPath=", "desiredYear=", "fileEnding=", "distanceMetric="])
+            argv, "hi:y:f:d:", ["inputPath=", "desiredYear=", "fileEnding=", "distanceMetric="])
     except getopt.GetoptError:
         print('alignment_stats.py -i <inputPath> -y <desiredYear> -f <fileEnding> -d <distanceMetric>\n\n')
         sys.exit(2)
