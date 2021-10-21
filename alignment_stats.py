@@ -47,7 +47,7 @@ def parse_mafft_file(mafft_file):
                 seq.extend(seq_on_line)
 
 
-def compare_seqs(seq1,seq2):
+def compare_seqs(seq1,seq2,distance_metric):
     """
     seq1 will always be CONSENSUS/reference to help determine insertion/deletion/substitution
     """
@@ -84,7 +84,14 @@ def compare_seqs(seq1,seq2):
     insertion_count = insertion_count - apreceding - atrailing
     deletion_count = deletion_count - bpreceding - btrailing
     total_length = length - apreceding - atrailing - bpreceding - btrailing
-    distance_ham = insertion_count+deletion_count+substitution_count
+    distance = None
+    if distance_metric == 'percent':
+        distance = insertion_count+deletion_count+substitution_count/total_length
+    elif distance_metric == 'hamming':
+        distance = insertion_count+deletion_count+substitution_count
+    else:
+        print("NO DISTANCE SPECIFIED, DEFAULTING TO HAMMING")
+        distance = insertion_count+deletion_count+substitution_count
     distance_var = distance_ham*(total_length - distance_ham)/total_length
     return insertion_count,deletion_count,substitution_count,total_length,distance_ham,distance_var
 
@@ -112,7 +119,7 @@ def plotly_plot(df,outPath,col):
     fig.write_html(f"{outPath}{col}.html")
 
 
-def mafft_stats(file_list,desired_year,outPath):
+def mafft_stats(file_list,desired_year,outPath,distance_metric):
     """
     """
     df_row = 0
@@ -125,7 +132,7 @@ def mafft_stats(file_list,desired_year,outPath):
                 seq_id = f"!{seq_id}"
             this_fasta.append((seq_id,seq))
         this_fasta.sort()                           # sort for order
-        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1],,distance_metric)
         df.loc[df_row] = [year,this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var]
         df_row += 1
         consensus_id = this_fasta[0][0][1:]
@@ -144,7 +151,7 @@ def mafft_stats(file_list,desired_year,outPath):
     # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl    
 
 
-def fasta_stats(file_list,outPath,qualifier=None):
+def fasta_stats(file_list,outPath,distance_metric,qualifier=None):
     """
     """
     df_row = 0
@@ -156,7 +163,7 @@ def fasta_stats(file_list,outPath,qualifier=None):
                 seq_id = f"!{seq_id}"
             this_fasta.append((seq_id,seq))
         this_fasta.sort()                           # sort for order
-        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1],distance_metric)
         df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var]
         df_row += 1
         consensus_id = this_fasta[0][0][1:]
@@ -174,19 +181,20 @@ def fasta_stats(file_list,outPath,qualifier=None):
 
 def main(argv):
     inputPath = ''
-    desired_year = None
-    file_end = 'mafft'
+    desired_year = None                         # YYYY
+    file_end = 'mafft'                          # or fasta
+    distance_metric = 'hamming'                 # or percent
 
     try:
         opts, args = getopt.getopt(
-            argv, "hi:y:f:", ["inputPath=", "desiredYear=", "fileEnding="])
+            argv, "hiy:f:d:", ["inputPath=", "desiredYear=", "fileEnding=", "distanceMetric="])
     except getopt.GetoptError:
-        print('alignment_stats.py -i <inputPath> -y <desiredYear>\n\n')
+        print('alignment_stats.py -i <inputPath> -y <desiredYear> -f <fileEnding> -d <distanceMetric>\n\n')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
             print('alignment_stats.py -i <inputPath>\n\n')
-            print('time python3 alignment_stats.py -i /path/to/mafft_files/ -y year')
+            print('time python3 alignment_stats.py -i /path/to/mafft_files/ -y year -f mafft -d hamming')
             sys.exit()
         elif opt in ("-i", "--inputPath"):
             inputPath = arg
@@ -194,6 +202,8 @@ def main(argv):
             desired_year = int(arg)
         elif opt in ("-f", "--fileEnding"):
             file_end = arg
+        elif opt in ("-d", "--distanceMetric"):
+            distance_metric = arg
 
     print('Input path is ', inputPath)
     # add trailing directory separator if needed
@@ -205,9 +215,9 @@ def main(argv):
     print('Output path is ', outPath)
     file_list = globIt(inputPath,[file_end])
     if file_end == 'mafft':
-        mafft_stats(file_list,desired_year,outPath)
+        mafft_stats(file_list,desired_year,outPath,distance_metric)
     elif file_end == 'fasta':
-        fasta_stats(file_list,outPath)
+        fasta_stats(file_list,outPath,distance_metric)
     
 
 if __name__ == "__main__":
