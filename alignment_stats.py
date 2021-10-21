@@ -49,7 +49,7 @@ def parse_mafft_file(mafft_file):
 
 def compare_seqs(seq1,seq2):
     """
-    seq1 will always be CONSENSUS to help determine insertion/deletion/substitution
+    seq1 will always be CONSENSUS/reference to help determine insertion/deletion/substitution
     """
     insertion_count = 0
     deletion_count = 0
@@ -84,7 +84,9 @@ def compare_seqs(seq1,seq2):
     insertion_count = insertion_count - apreceding - atrailing
     deletion_count = deletion_count - bpreceding - btrailing
     total_length = length - apreceding - atrailing - bpreceding - btrailing
-    return insertion_count,deletion_count,substitution_count,total_length
+    distance_ham = insertion_count+deletion_count+substitution_count
+    distance_var = distance_ham*(total_length - distance_ham)/total_length
+    return insertion_count,deletion_count,substitution_count,total_length,distance_ham,distance_var
 
 
 def plot_histo(x,outPath,col):
@@ -114,7 +116,7 @@ def mafft_stats(file_list,desired_year,outPath):
     """
     """
     df_row = 0
-    df = pd.DataFrame(columns=['Year','Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
+    df = pd.DataFrame(columns=['Year','Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length','Hamming_Distance','Distance Variance'])    
     for mafft_file in file_list:
         this_fasta = []
         year = int(mafft_file.split('.')[2])
@@ -123,8 +125,8 @@ def mafft_stats(file_list,desired_year,outPath):
                 seq_id = f"!{seq_id}"
             this_fasta.append((seq_id,seq))
         this_fasta.sort()                           # sort for order
-        insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
-        df.loc[df_row] = [year,this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
+        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+        df.loc[df_row] = [year,this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var]
         df_row += 1
         consensus_id = this_fasta[0][0][1:]
         outline = '\t'.join([this_fasta[1][0],consensus_id,str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
@@ -146,7 +148,7 @@ def fasta_stats(file_list,outPath,qualifier=None):
     """
     """
     df_row = 0
-    df = pd.DataFrame(columns=['Query_ID','Mapped_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
+    df = pd.DataFrame(columns=['Query_ID','Mapped_ID','Insertions','Deletions','Substitutions','Sequence_Length','Hamming_Distance','Distance Variance'])    
     for fasta_file in file_list:
         this_fasta = []
         for seq_id,seq in readFasta(fasta_file):
@@ -154,8 +156,8 @@ def fasta_stats(file_list,outPath,qualifier=None):
                 seq_id = f"!{seq_id}"
             this_fasta.append((seq_id,seq))
         this_fasta.sort()                           # sort for order
-        insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
-        df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
+        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1])
+        df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var]
         df_row += 1
         consensus_id = this_fasta[0][0][1:]
         outline = '\t'.join([this_fasta[1][0],consensus_id,str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
