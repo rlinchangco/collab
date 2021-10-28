@@ -147,12 +147,16 @@ def mafft_stats(file_list,desired_year,outPath,distance_metric):
         print(f"Filtered by {desired_year}\nRows/Columns remaining:{df.shape}")
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
     for col in df.columns[3:]:
-        print(df[col])
         df[col] = pd.to_numeric(df[col])
+    medians = df.median()
+    medians = medians.to_frame().T
+    print(medians)
+    pd.concat([pd.Series(['Combined','Combined','Combined']), medians])
     stats = df.describe()
     stats.insert(0, df.columns[1], 'Combined')
     stats.insert(0, df.columns[0], 'Combined')
-    new_df = pd.concat([df,stats])
+    stats.insert(0, df.columns[2], 'Combined')
+    new_df = pd.concat([df,stats,medians])
     new_df.to_csv(df_csv)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
     # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl    
