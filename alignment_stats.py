@@ -124,6 +124,7 @@ def mafft_stats(file_list,desired_year,outPath,distance_metric):
     """
     df_row = 0
     df = pd.DataFrame(columns=['Year','Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length','Hamming_Distance','Distance Variance'])    
+    consensus_id = ''
     for mafft_file in file_list:
         this_fasta = []
         year = int(mafft_file.split('.')[2])
