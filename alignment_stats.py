@@ -141,12 +141,12 @@ def mafft_stats(file_list,desired_year,outPath,distance_metric):
         if 'ID' not in col:
             plot_histo(df[col], outPath, col)
             plotly_plot(df, outPath, col)
-    print(df.shape)
     if desired_year:
         df = df[df.Year <= desired_year]
         print(f"Filtered by {desired_year}\nRows/Columns remaining:{df.shape}")
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
-    for col in df.columns[2:]:
+    for col in df.columns[3:]:
+        print(df[col])
         df[col] = pd.to_numeric(df[col])
     stats = df.describe()
     stats.insert(0, df.columns[1], 'Combined')
