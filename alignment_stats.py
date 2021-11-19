@@ -26,31 +26,13 @@ def readFasta(fastaFile):
         yield fasta.id, str(fasta.seq)
 
 
-def parse_mafft_file(mafft_file):
-    """
-    parses mafft pairwise alignment fasta file and yields fasta tuple
-    """
-    with open(mafft_file,'r') as mafft:
-        seq_id = None
-        seq = []
-        for line in mafft:
-            line = line.strip()
-            if line.startswith('>'):
-                if seq_id == None:
-                    seq_id = line
-                else:
-                    yield seq_id, "".join(seq)
-                    seq_id = line
-                    seq = []                    
-            else:
-                seq_on_line = list(line)
-                seq.extend(seq_on_line)
-
-
-def compare_seqs(seq1,seq2,distance_metric):
+def compare_seqs(seq1,seq2,distance_metric,genome_ref_seq=None,read_frame=None):
     """
     seq1 will always be CONSENSUS/reference to help determine insertion/deletion/substitution
+    genome_ref_seq not null for ORF substitution location identification, should be a sequence
+    read_frame not null for ORF index of +1,+2, or +3
     """
+    genome_ref_loc = []                                             # genome reference location list to store substitutions positions
     insertion_count = 0
     deletion_count = 0
     substitution_count = 0
@@ -71,16 +53,21 @@ def compare_seqs(seq1,seq2,distance_metric):
         bpreceding = len(seq2) - len(seq2.lstrip('-'))
     if seq2.endswith('-'):
         btrailing = len(seq2) - len(seq2.rstrip('-'))
-    for a, b in zip(seq1, seq2):
+    for i, (a, b) in enumerate(zip(seq1, seq2)):
         a = a.lower()
         b = b.lower()
-        if a != b:                  # bases are different
+        if a != b:                                                  # bases are different
             if a == '-':
                 insertion_count += 1
             elif b == '-':
                 deletion_count += 1
             else:
                 substitution_count += 1
+                if genome_ref_seq:
+                    if genome_ref_seq[i] != '-':
+                        genome_ref_loc.append(i)
+                    else:
+                        continue                                    # replace with something when - in ref
     insertion_count = insertion_count - apreceding - atrailing
     deletion_count = deletion_count - bpreceding - btrailing
     total_length = length - apreceding - atrailing - bpreceding - btrailing
@@ -192,6 +179,34 @@ def fasta_stats(file_list,outPath,distance_metric,qualifier=None):
     stats.insert(0, df.columns[0], 'Combined')
     new_df = pd.concat([df,stats])
     new_df.to_csv(df_csv)
+    # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
+    # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl 
+
+
+def orf_stats(file_list,outPath,distance_metric,qualifier=None):
+    """
+    """
+    df_row = 0
+    df = pd.DataFrame(columns=['Query_ID','Mapped_ID','Insertions','Deletions','Substitutions','Sequence_Length','Hamming_Distance','Distance Variance'])    
+    for fasta_file in file_list:
+        this_fasta = []
+        for seq_id,seq in readFasta(fasta_file):
+            if 'consensus' not in seq_id.lower():       # modify to force order of REFERENCE
+                seq_id = f"!REF_{seq_id}"
+            this_fasta.append((seq_id,seq))
+        this_fasta.sort()                           # sort for order (older sequence should be second index)
+        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[1][1],this_fasta[1][1],distance_metric)
+        df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var]
+        df_row += 1
+        consensus_id = this_fasta[0][0][1:]
+        outline = '\t'.join([this_fasta[1][0],consensus_id,str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
+    for col in df.columns.to_list():
+        if 'ID' not in col:
+            plot_histo(df[col], outPath, col)
+            plotly_plot(df, outPath, col)
+    print(df.shape)
+    df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
+    df.to_csv(df_csv,index=False)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
     # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl 
 
