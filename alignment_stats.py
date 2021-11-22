@@ -199,10 +199,10 @@ def codon_subs(fasta1,fasta2,genome_ref_seq=None):
                         pos3 += 1
                     else:
                         div = genome_ref_sans_gap / 3
-                        if str(div).endswith('7'):              # .66667 means 2/3, codon position 2
+                        if str(div).endswith('7'):              # XX.66667 means 2/3, codon position 2
                             pos = 2
                             pos2 += 1
-                        else:                                   # .33333 means 1/3, codon position 1
+                        else:                                   # XX.33333 means 1/3, codon position 1
                             pos = 1
                             pos1 += 1
                     sub_list.append([i+1,genome_ref_sans_gap,pos])  # only add substitutions to list output
