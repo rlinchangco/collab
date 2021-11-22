@@ -176,6 +176,9 @@ def codon_subs(fasta1,fasta2,genome_ref_seq=None):
     genome_ref_sans_gap = 0                                     # genome reference base pair position (ignores insertions)
     seq1 = fasta1[1]
     seq2 = fasta2[1]
+    pos1 = 0
+    pos2 = 0
+    pos3 = 0
     for i, (a, b) in enumerate(zip(seq1, seq2)):
         sub = 'no'
         pos = 0
@@ -193,14 +196,18 @@ def codon_subs(fasta1,fasta2,genome_ref_seq=None):
                     sub = 'yes'
                     if genome_ref_sans_gap % 3 == 0:            # no remainder means codon position 3
                         pos = 3
+                        pos3 += 1
                     else:
                         div = genome_ref_sans_gap / 3
                         if str(div).endswith('7'):              # .66667 means 2/3, codon position 2
                             pos = 2
+                            pos2 += 1
                         else:                                   # .33333 means 1/3, codon position 1
                             pos = 1
+                            pos1 += 1
                     sub_list.append([i+1,genome_ref_sans_gap,pos])  # only add substitutions to list output
     sub_list.insert(0,[f"query:{fasta2[0]}",f"ref:{fasta1[0]}",f"TOTAL SUBS:{substitution_count}"])
+    sub_list.insert(1,[f"codon_pos_1_total:{pos1}",f"codon_pos_2_total:{pos2}",f"codon_pos_3_total:{pos3}"])
     columns = ["alignment_index", "hxb2_genome_position", "codon_position"]
     return pd.DataFrame(sub_list,columns=columns)
 
