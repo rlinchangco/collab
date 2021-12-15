@@ -26,31 +26,13 @@ def readFasta(fastaFile):
         yield fasta.id, str(fasta.seq)
 
 
-def parse_mafft_file(mafft_file):
+def compare_seqs(seq1,seq2,distance_metric,genome_ref_seq=None,read_frame=0):
     """
-    parses mafft pairwise alignment fasta file and yields fasta tuple
+    seq1 will always be CONSENSUS/reference to help determine insertion/deletion/substitution
+    genome_ref_seq not null for ORF substitution location identification, should be a sequence
+    read_frame not null for ORF index of +1,+2, or +3 (1,2, or 3 as argument)
     """
-    with open(mafft_file,'r') as mafft:
-        seq_id = None
-        seq = []
-        for line in mafft:
-            line = line.strip()
-            if line.startswith('>'):
-                if seq_id == None:
-                    seq_id = line
-                else:
-                    yield seq_id, "".join(seq)
-                    seq_id = line
-                    seq = []                    
-            else:
-                seq_on_line = list(line)
-                seq.extend(seq_on_line)
-
-
-def compare_seqs(seq1,seq2):
-    """
-    seq1 will always be CONSENSUS to help determine insertion/deletion/substitution
-    """
+    genome_ref_loc = []                                             # genome reference location list to store substitutions positions
     insertion_count = 0
     deletion_count = 0
     substitution_count = 0
@@ -71,20 +53,163 @@ def compare_seqs(seq1,seq2):
         bpreceding = len(seq2) - len(seq2.lstrip('-'))
     if seq2.endswith('-'):
         btrailing = len(seq2) - len(seq2.rstrip('-'))
-    for a, b in zip(seq1, seq2):
-        a = a.lower()
-        b = b.lower()
-        if a != b:                  # bases are different
-            if a == '-':
-                insertion_count += 1
-            elif b == '-':
-                deletion_count += 1
-            else:
-                substitution_count += 1
+    ref_loc = 0
+    for i, (a, b) in enumerate(zip(seq1, seq2)):
+        if genome_ref_seq:
+            if genome_ref_seq[i] != '-':
+                a = a.lower()
+                b = b.lower()
+                if a != b:                                                  # bases are different
+                    if a == '-':
+                        insertion_count += 1
+                    elif b == '-':
+                        deletion_count += 1
+                    else:
+                        substitution_count += 1
+                        genome_ref_loc.append(ref_loc+read_frame)
+                ref_loc += 1                                                # increment ref_loc by a position
+        else:
+            a = a.lower()
+            b = b.lower()
+            if a != b:                                                  # bases are different
+                if a == '-':
+                    insertion_count += 1
+                elif b == '-':
+                    deletion_count += 1
+                else:
+                    substitution_count += 1
     insertion_count = insertion_count - apreceding - atrailing
     deletion_count = deletion_count - bpreceding - btrailing
     total_length = length - apreceding - atrailing - bpreceding - btrailing
-    return insertion_count,deletion_count,substitution_count,total_length
+    distance = None
+    if distance_metric == 'percent':
+        distance = insertion_count+deletion_count+substitution_count/total_length
+    elif distance_metric == 'hamming':
+        distance = insertion_count+deletion_count+substitution_count
+    else:
+        print("NO DISTANCE SPECIFIED, DEFAULTING TO HAMMING")
+        distance = insertion_count+deletion_count+substitution_count
+    distance_var = distance*(total_length - distance)/total_length
+    if genome_ref_seq:
+        return insertion_count,deletion_count,substitution_count,total_length,distance,distance_var,genome_ref_loc
+    else:
+        return insertion_count,deletion_count,substitution_count,total_length,distance,distance_var
+
+
+def compare_seqs_by_codon(seq1,seq2,distance_metric,genome_ref_seq=None,read_frame=0):
+    """
+    """
+    # print(len(genome_ref_seq),genome_ref_seq.count('-'))          # expectation of 9719 positions for genome_ref_seq
+    genome_ref_loc = []                                             # genome reference location list to store substitutions positions
+    insertion_count = 0
+    deletion_count = 0
+    substitution_count = 0
+    length = len(seq1)
+    if length != len(seq2):
+        print("NOT SAME LENGTH")
+        length = [len(seq1),len(seq2)]
+    apreceding = 0
+    atrailing = 0
+    bpreceding = 0
+    btrailing = 0    
+    # account for preceding or trailing "gaps"    
+    if seq1.startswith('-'):
+        apreceding = len(seq1) - len(seq1.lstrip('-'))
+    if seq1.endswith('-'):
+        atrailing = len(seq1) - len(seq1.rstrip('-'))
+    if seq2.startswith('-'):
+        bpreceding = len(seq2) - len(seq2.lstrip('-'))
+    if seq2.endswith('-'):
+        btrailing = len(seq2) - len(seq2.rstrip('-'))
+    ref_loc = 0
+    for i, (a, b) in enumerate(zip(seq1, seq2)):
+        if genome_ref_seq:
+            if genome_ref_seq[i] != '-':
+                a = a.lower()
+                b = b.lower()
+                if a != b:                                                  # bases are different
+                    if a == '-':
+                        insertion_count += 1
+                    elif b == '-':
+                        deletion_count += 1
+                    else:
+                        substitution_count += 1
+                        genome_ref_loc.append(ref_loc+read_frame)
+                ref_loc += 1                                                # increment ref_loc by a position
+        else:
+            a = a.lower()
+            b = b.lower()
+            if a != b:                                                  # bases are different
+                if a == '-':
+                    insertion_count += 1
+                elif b == '-':
+                    deletion_count += 1
+                else:
+                    substitution_count += 1
+    print(seq1.count('-'),apreceding+atrailing,insertion_count)
+    insertion_count = insertion_count - apreceding - atrailing
+    # print(deletion_count,bpreceding,btrailing)
+    deletion_count = deletion_count - bpreceding - btrailing
+    total_length = length - apreceding - atrailing - bpreceding - btrailing
+    distance = None
+    if distance_metric == 'percent':
+        distance = insertion_count+deletion_count+substitution_count/total_length
+    elif distance_metric == 'hamming':
+        distance = insertion_count+deletion_count+substitution_count
+    else:
+        print("NO DISTANCE SPECIFIED, DEFAULTING TO HAMMING")
+        distance = insertion_count+deletion_count+substitution_count
+    distance_var = distance*(total_length - distance)/total_length
+    if genome_ref_seq:
+        return insertion_count,deletion_count,substitution_count,total_length,distance,distance_var,genome_ref_loc
+    else:
+        return insertion_count,deletion_count,substitution_count,total_length,distance,distance_var
+
+
+def codon_subs(fasta1,fasta2,genome_ref_seq=None):
+    """
+    finds substitutions only between old sequence and new
+    returns dataframe of: alignment index, genome position, codon position
+    """
+    sub_list = []
+    substitution_count = 0
+    genome_ref_sans_gap = 0                                     # genome reference base pair position (ignores insertions)
+    seq1 = fasta1[1]
+    seq2 = fasta2[1]
+    pos1 = 0
+    pos2 = 0
+    pos3 = 0
+    for i, (a, b) in enumerate(zip(seq1, seq2)):
+        sub = 'no'
+        pos = 0
+        if genome_ref_seq[i] != '-':
+            a = a.lower()
+            b = b.lower()
+            genome_ref_sans_gap += 1
+            if a != b:                                          # bases are different
+                if a == '-':                                    # insertion
+                    continue
+                elif b == '-':                                  # deletion
+                    continue
+                else:                                           # substitution
+                    substitution_count += 1
+                    sub = 'yes'
+                    if genome_ref_sans_gap % 3 == 0:            # no remainder means codon position 3
+                        pos = 3
+                        pos3 += 1
+                    else:
+                        div = genome_ref_sans_gap / 3
+                        if str(div).endswith('7'):              # XX.66667 means 2/3, codon position 2
+                            pos = 2
+                            pos2 += 1
+                        else:                                   # XX.33333 means 1/3, codon position 1
+                            pos = 1
+                            pos1 += 1
+                    sub_list.append([i+1,genome_ref_sans_gap,pos])  # only add substitutions to list output
+    sub_list.insert(0,[f"query:{fasta2[0]}",f"ref:{fasta1[0]}",f"TOTAL SUBS:{substitution_count}"])
+    sub_list.insert(1,[f"codon_pos_1_total:{pos1}",f"codon_pos_2_total:{pos2}",f"codon_pos_3_total:{pos3}"])
+    columns = ["alignment_index", "hxb2_genome_position", "codon_position"]
+    return pd.DataFrame(sub_list,columns=columns)
 
 
 def plot_histo(x,outPath,col):
@@ -110,11 +235,12 @@ def plotly_plot(df,outPath,col):
     fig.write_html(f"{outPath}{col}.html")
 
 
-def mafft_stats(file_list,desired_year,outPath):
+def mafft_stats(file_list,desired_year,outPath,distance_metric):
     """
     """
     df_row = 0
-    df = pd.DataFrame(columns=['Year','Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
+    df = pd.DataFrame(columns=['Year','Query_ID','Consensus_ID','Insertions','Deletions','Substitutions','Sequence_Length','Hamming_Distance','Distance Variance'])    
+    consensus_id = ''
     for mafft_file in file_list:
         this_fasta = []
         year = int(mafft_file.split('.')[2])
@@ -123,30 +249,39 @@ def mafft_stats(file_list,desired_year,outPath):
                 seq_id = f"!{seq_id}"
             this_fasta.append((seq_id,seq))
         this_fasta.sort()                           # sort for order
-        insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
-        df.loc[df_row] = [year,this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
+        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1],distance_metric)
+        df.loc[df_row] = [year,this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var]
         df_row += 1
         consensus_id = this_fasta[0][0][1:]
-        outline = '\t'.join([this_fasta[1][0],consensus_id,str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
     for col in df.columns.to_list():
         if 'ID' not in col:
             plot_histo(df[col], outPath, col)
             plotly_plot(df, outPath, col)
-    print(df.shape)
     if desired_year:
         df = df[df.Year <= desired_year]
         print(f"Filtered by {desired_year}\nRows/Columns remaining:{df.shape}")
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
-    df.to_csv(df_csv,index=False)
+    for col in df.columns[3:]:
+        df[col] = pd.to_numeric(df[col])
+    medians = df.median()
+    medians = medians.to_frame().T
+    print(medians)
+    pd.concat([pd.Series(['Combined','Combined','Combined']), medians])
+    stats = df.describe()
+    stats.insert(0, df.columns[1], 'Combined')
+    stats.insert(0, df.columns[0], 'Combined')
+    stats.insert(0, df.columns[2], 'Combined')
+    new_df = pd.concat([df,stats,medians])
+    new_df.to_csv(df_csv)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
     # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl    
 
 
-def fasta_stats(file_list,outPath,qualifier=None):
+def fasta_stats(file_list,outPath,distance_metric,qualifier=None):
     """
     """
     df_row = 0
-    df = pd.DataFrame(columns=['Query_ID','Mapped_ID','Insertions','Deletions','Substitutions','Sequence_Length'])    
+    df = pd.DataFrame(columns=['Query_ID','Mapped_ID','Insertions','Deletions','Substitutions','Sequence_Length','Hamming_Distance','Distance Variance'])    
     for fasta_file in file_list:
         this_fasta = []
         for seq_id,seq in readFasta(fasta_file):
@@ -154,37 +289,65 @@ def fasta_stats(file_list,outPath,qualifier=None):
                 seq_id = f"!{seq_id}"
             this_fasta.append((seq_id,seq))
         this_fasta.sort()                           # sort for order
-        insertion_count,deletion_count,substitution_count,length = compare_seqs(this_fasta[0][1],this_fasta[1][1])
-        df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length]
+        insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var = compare_seqs(this_fasta[0][1],this_fasta[1][1],distance_metric)
+        df.loc[df_row] = [this_fasta[1][0],this_fasta[0][0],insertion_count,deletion_count,substitution_count,length,distance_ham,distance_var]
         df_row += 1
         consensus_id = this_fasta[0][0][1:]
-        outline = '\t'.join([this_fasta[1][0],consensus_id,str(insertion_count),str(deletion_count),str(substitution_count),str(length)])+'\n'
     for col in df.columns.to_list():
         if 'ID' not in col:
             plot_histo(df[col], outPath, col)
             plotly_plot(df, outPath, col)
     print(df.shape)
     df_csv = f"{outPath}{consensus_id}_statsoutfile.csv"
-    df.to_csv(df_csv,index=False)
+    for col in df.columns[2:]:
+        df[col] = pd.to_numeric(df[col])
+    stats = df.describe()
+    stats.insert(0, df.columns[1], 'Combined')
+    stats.insert(0, df.columns[0], 'Combined')
+    new_df = pd.concat([df,stats])
+    new_df.to_csv(df_csv)
     # df_xlsx = f"{outPath}{consensus_id}_statsoutfile.xlsx"
     # df.to_excel(df_xlsx,index=False)      # need excelwriter like openpyxl 
 
 
+def codon_stats(file_list,outPath):
+    """
+    only finds substitutions
+    """
+    overall_dfs = []
+    for fasta_file in file_list:
+        this_fasta = []
+        for seq_id,seq in readFasta(fasta_file):
+            if 'consensus' not in seq_id.lower():       # modify to force order of REFERENCE
+                seq_id = f"!REF_{seq_id}"
+            this_fasta.append((seq_id,seq))
+        this_fasta.sort()                           # sort for order (older sequence should be second index)
+        sub_df = codon_subs(this_fasta[2],this_fasta[1],genome_ref_seq=this_fasta[0][1])
+        print(f"There are {sub_df.shape[0]} substitutions between {this_fasta[1][0]} and {this_fasta[2][0]}")
+        overall_dfs.append(sub_df)
+
+    df_csv = f"{outPath}substitutions_positions_file.csv"
+    overall = pd.concat(overall_dfs,sort=False)
+    overall.to_csv(df_csv,index=False)
+
+
 def main(argv):
     inputPath = ''
-    desired_year = None
-    file_end = 'mafft'
+    desired_year = None                         # YYYY
+    file_end = 'mafft'                          # or fasta
+    distance_metric = 'hamming'                 # or percent
+    reading_frames = None
 
     try:
         opts, args = getopt.getopt(
-            argv, "hi:y:f:", ["inputPath=", "desiredYear=", "fileEnding="])
+            argv, "hi:y:f:d:r:", ["inputPath=", "desiredYear=", "fileEnding=", "distanceMetric=", "readingFrames="])
     except getopt.GetoptError:
-        print('alignment_stats.py -i <inputPath> -y <desiredYear>\n\n')
+        print('alignment_stats.py -i <inputPath> -y <desiredYear> -f <fileEnding> -d <distanceMetric>\n\n')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
             print('alignment_stats.py -i <inputPath>\n\n')
-            print('time python3 alignment_stats.py -i /path/to/mafft_files/ -y year')
+            print('time python3 alignment_stats.py -i /path/to/mafft_files/ -y year -f mafft -d hamming')
             sys.exit()
         elif opt in ("-i", "--inputPath"):
             inputPath = arg
@@ -192,6 +355,10 @@ def main(argv):
             desired_year = int(arg)
         elif opt in ("-f", "--fileEnding"):
             file_end = arg
+        elif opt in ("-d", "--distanceMetric"):
+            distance_metric = arg
+        elif opt in ("-r", "--readingFrames"):
+            reading_frames = arg
 
     print('Input path is ', inputPath)
     # add trailing directory separator if needed
@@ -203,9 +370,12 @@ def main(argv):
     print('Output path is ', outPath)
     file_list = globIt(inputPath,[file_end])
     if file_end == 'mafft':
-        mafft_stats(file_list,desired_year,outPath)
-    elif file_end == 'fasta':
-        fasta_stats(file_list,outPath)
+        mafft_stats(file_list,desired_year,outPath,distance_metric)
+    elif file_end == 'fasta' and reading_frames is None:
+        fasta_stats(file_list,outPath,distance_metric)
+    else:
+        codon_stats(file_list,outPath)
+    
     
 
 if __name__ == "__main__":
