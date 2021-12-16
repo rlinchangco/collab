@@ -221,18 +221,42 @@ for(i in 1:length(treeList)){
   #original
   A=num.intro(tf, "Recipient", "Donor")
   
-  #swap recipient with donor
-  #A=num.intro(tf, "Donor", "Recipient")
-  
   if(!is.null(A[4])){
-  cat(c(start_coord,end_coord,"yes",A[[1]],A[[2]],A[[3]],A[[5]],A[[6]],A[[7]],A[[8]],A[[9]],A[[10]],A[[11]],A[[12]],A[[4]],numberDonors,numberRecipients,totaltips,dt[1],rt[1],ablen,"\n"),file=output,sep="\t",append = TRUE)
+    outgroup <-c(outgroup, "yes")
+    ancestral <-c(ancestral, A[[1]])
+    ia <-c(ia, A[[2]])
+    ib <-c(ib, A[[3]])
+    tdist <-c(tdist, A[[5]])
+    pwdAB <-c(pwdAB, A[[6]])
+    pdA <-c(pdA, A[[7]])
+    pwdB <-c(pwdB, A[[8]])
+    tIAmean <-c(tIAmean, A[[9]])
+    tIAstd <-c(tIAstd, A[[10]])
+    tIBmean <-c(tIBmean, A[[11]])
+    tIBstd <-c(tIBstd, A[[12]])
+    topology <-c(topology, A[[4]])
+    meanBlen <-c(meanBlen, ablen)
+    #cat(c(start_coord,end_coord,"yes",A[[1]],A[[2]],A[[3]],A[[5]],A[[6]],A[[7]],A[[8]],A[[9]],A[[10]],A[[11]],A[[12]],A[[4]],numberDonors,numberRecipients,totaltips,dt[1],rt[1],ablen,"\n"),file=output,sep="\t",append = TRUE)
   }
-  #instead of printing to console here, print to file
   else{
-    cat(c(start_coord,end_coord,"no","N/A","N/A","N/A","N/A","N/A","N/A","N/A","N/A","N/A","N/A","N/A","NMO",numberDonors,numberRecipients,totaltips,dt[1],rt[1],ablen,"\n"),file=output,sep="\t",append = TRUE)
+    outgroup <-c(outgroup, "no")
+    ancestral <-c(ancestral, "N/A")
+    ia <-c(ia, "N/A")
+    ib <-c(ib, "N/A")
+    tdist <-c(tdist, "N/A")
+    pwdAB <-c(pwdAB, "N/A")
+    pdA <-c(pdA, "N/A")
+    pwdB <-c(pwdB, "N/A")
+    tIAmean <-c(tIAmean, "N/A")
+    tIAstd <-c(tIAstd, "N/A")
+    tIBmean <-c(tIBmean, "N/A")
+    tIBstd <-c(tIBstd, "N/A")
+    topology <-c(topology, "N/A")
+    meanBlen <-c(meanBlen, ablen)    
+    #cat(c(start_coord,end_coord,"no","N/A","N/A","N/A","N/A","N/A","N/A","N/A","N/A","N/A","N/A","N/A","NMO",numberDonors,numberRecipients,totaltips,dt[1],rt[1],ablen,"\n"),file=output,sep="\t",append = TRUE)
   }
 
 }
 
-measures.data <- data.frame(pair,dateStart,dateEnd,treeStart,treeEnd,ConsIN,HeIN,RetIN,numberDonor,numberRecipient)
+measures.data <- data.frame(pair,dateStart,dateEnd,treeStart,treeEnd,ConsIN,HeIN,RetIN,numberDonor,numberRecipient,outgroup,ancestral,ia,ib,tdist,pwdAB,pdA,pwdB,tIAmeant,tIAstd,tIBmean,tIBstd,topology,meanBlen)
 write.csv(measures.data,outfile, row.names = FALSE)
