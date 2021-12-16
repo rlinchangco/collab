@@ -168,7 +168,7 @@ for(i in 1:length(treeList)){
   tname = treeList[i]
   phyname = phyList[i]
   tname_1 =strsplit(tname,"/")
-  tname_split = strsplit(tname_1[[1]][3], "_")
+  tname_split = strsplit(tname_1[[1]][2], "_")
   treeStart <- c(treeStart,tname_split[[1]][1])
   treeEnd <- c(treeEnd,tname_split[[1]][2])
 
