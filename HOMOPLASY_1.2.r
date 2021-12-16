@@ -185,7 +185,7 @@ for(i in 1:length(treeList)){
   ## retention index
   RetIN <- c(RetIN, RI(treedat,phydat))
 
-  tf=monoRootdrop(treefile = fileList[i])
+  tf=monoRootdrop(treefile = treeList[i])
   numberRecipients<-length(grep("Recipient",tf$tip.label))
   numberDonors<-length(grep("Donor",tf$tip.label))
   totaltips<-numberDonors+numberRecipients
