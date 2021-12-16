@@ -133,30 +133,6 @@ monoRootdrop <- function(treefile){
 treeList <- list.files(path=folder, pattern="*.tre$", full.names=TRUE, recursive=TRUE)
 phyList <- list.files(path=folder, pattern="*.phy$", full.names=TRUE, recursive=TRUE)
 
-"""
-x Start_Coord
-x End_Coord
-Outgroup_monophyly
-Ancestral_state
-IA
-IB
-t.dist
-pwd.AB
-pd.A
-pwd.B
-tIA.mean
-tIA.sd
-tIB.mean
-tIB.sd
-Topology
-x Number Donor Tips
-x Number Recipient Tips
-Total number of tips
-x Donor Date
-x Recipient Date
-mean blen
-"""
-
 ## stats1
 pair <-c()
 dateStart <-c()       # "Donor Date"
