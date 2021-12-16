@@ -234,5 +234,5 @@ for(i in 1:length(treeList)){
 
 }
 
-measures.data <- data.frame(pair,dateStart,dateEnd,treeStart,treeEnd,ConsIN,HeIN,RetIN,numberDonor,numberRecipient,outgroup,ancestral,ia,ib,tdist,pwdAB,pdA,pwdB,tIAmeant,tIAstd,tIBmean,tIBstd,topology,meanBlen)
+measures.data <- data.frame(pair,dateStart,dateEnd,treeStart,treeEnd,ConsIN,HeIN,RetIN,numberDonor,numberRecipient,outgroup,ancestral,ia,ib,tdist,pwdAB,pdA,pwdB,tIAmean,tIAstd,tIBmean,tIBstd,topology,meanBlen)
 write.csv(measures.data,outfile, row.names = FALSE)
