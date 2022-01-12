@@ -164,14 +164,14 @@ def findAndWriteSubtypes(fastaFile:str,outputfile:str,consensus_dict:collections
     """
     fasta_dict = sortUniqueSubtypeSeqs(fastaFile,'.',0)
     for subt,fasta in fasta_dict.items():
-        thisSub = open(f"{outputfile}{subt}.seqs.fasta","w")
-        for header,seq in fasta.items():
-            thisSub.write(f"{header}\n{seq}\n")
-        if subt in consensus_dict:
+        if subt in consensus_dict:                                      # ONLY those with matching consensus are written
+            thisSub = open(f"{outputfile}{subt}.seqs.fasta","w")
             for con_header,con_seq in consensus_dict[subt].items():
                 thisSub.write(f"{con_header}\n{con_seq}\n")            
-        thisSub.flush()
-        thisSub.close()
+            for header,seq in fasta.items():
+                thisSub.write(f"{header}\n{seq}\n")
+            thisSub.flush()
+            thisSub.close()
 
 
 def main(argv):
@@ -205,7 +205,7 @@ def main(argv):
     if not outputfile.endswith('/'):
         outputfile = f'{outputfile}/'
     question_existence(outputfile,'dir')
-    consensus_dict = sortUniqueSubtypeSeqs(inFile,'_',-1)
+    consensus_dict = sortUniqueSubtypeSeqs(inFile,'.',0)
     findAndWriteSubtypes(fastaFile,outputfile,consensus_dict)
  
 
