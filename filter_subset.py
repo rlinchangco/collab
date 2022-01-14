@@ -63,73 +63,6 @@ def question_existence(path,item_type):
         print("Creating directory\t{0}".format(path))
 
 
-# def parse_multiline_fasta(fastaFile):
-#     """
-#     convert multiline fasta file to single sequence line fasta
-#     """
-#     out = fastaFile.split('.')[0]
-#     with open(fastaFile) as inputFile, open(out+'.oneline.fasta', 'w') as f_output:
-#         block = []
-#         for line in inputFile:
-#             if line.startswith('>'):
-#                 if block:
-#                     f_output.write(''.join(block) + '\n')
-#                     block = []
-#                 f_output.write(line)
-#             else:
-#                 block.append(line.strip())
-
-#         if block:
-#             f_output.write(''.join(block) + '\n')
-
-
-# def make_fastaDict(fastaFile):
-#     """
-#     cache fasta to memory for lookup later
-#     """
-#     fastaDict = {}                  # {subtype:(orig_header,sequence)}
-#     with open(fastaFile) as inputFile:
-#         for line in inputFile:
-#             line = line.strip()
-#             if line.startswith('>'):
-#                 seqHeader = line
-#                 subtype = seqHeader.split('>CONSENSUS_')[1]
-#                 #print(subtype,seqHeader)
-#                 seq = next(inputFile).strip()
-#                 #print(seq)
-#                 if subtype not in fastaDict:
-#                     fastaDict[subtype] =  (seqHeader,seq)
-#                 else:
-#                     print(f"DUPLICATE FOR {subtype}")
-#     return fastaDict
-
-
-# def create_fasta(subDF_tuple, outputfile, fasta_dict):
-#     """
-#     creates fasta files PER subtype
-#     each sequence header follows format:
-#     >Accession_Patient Id_HXB2/MAC239 start_HXB2/MAC239 stop
-#     REFACTOR TO BE MODULAR TO ACCEPT ANY COLUMNS
-#     """
-#     nomatch = set()
-#     subtype = subDF_tuple[0]
-#     out = f"{outputfile}{subtype}.fasta"
-#     fastaOut = open(out,'w')
-#     if subtype in fasta_dict:
-#         header,seq = fasta_dict[subtype]
-#         fastaOut.write(f"{header}\n{seq}\n")
-#     else:
-#         print(f"{subtype} NOT found in consensus fasta file")
-#         nomatch.add(subtype)
-#     for index, row in subDF_tuple[1].iterrows():
-#         #print(row["Accession"], row["Patient Id"], row["HXB2/MAC239 start"], row["HXB2/MAC239 stop"])
-#         #header = f">{row['Accession']}_{row['Patient Id']}_{row['HXB2/MAC239 start']}_{row['HXB2/MAC239 stop']}\n{row['Sequence']}\n"
-#         fastaOut.write(header)
-#     fastaOut.flush()
-#     fastaOut.close()
-#     return nomatch
-
-
 def readFasta(fastaFile):
     from Bio import SeqIO
     fasta_sequences = SeqIO.parse(open(fastaFile),'fasta')
@@ -258,34 +191,6 @@ def main(argv):
     coords = dict(zip((coordDF.start,coordDF.end), coordDF.name))
     consensus_dict = sortUniqueSubtypeSeqs(inFile,'_',[0])
     findAndWriteSubtypes(fastaFile,outputfile,consensus_dict,coords)
- 
-
-    # if '.oneline.fasta' not in fastaFile:
-    #     parse_multiline_fasta(fastaFile)        # convert multiline fasta to single fasta
-    #     fastaFile = fastaFile.split('.')[0]+'.oneline.fasta'
-    # fasta_dict = make_fastaDict(fastaFile)      # cache consensus fasta file
-    # df1 = multi_parse(inFile)                   # read in dataset
-    # # list column headers to console
-    # print(df1.columns.to_list())
-    # # ask user for input()
-    # x = input('\nSelect ONE(1) column to group sequences by from above:')
-    # if x not in df1.columns.to_list():
-    #     print("{} does not exist, please try again...")
-    #     x = input()
-    # subs = df1[x].value_counts()
-    # print(f"\nCounts of Unique elements from {x}")
-    # print(subs)                     # show unique counts of elements in that column
-    # df_list = []
-    # # group into separate dataframes per unique element of column
-    # for sub in subs.index.to_list():
-    #     df_list.append((sub,df1[df1[x] == sub]))
-    # # iterate over all unique element dataframes and create fasta files
-    # nomatch = set()
-    # for subDF in df_list:
-    #     nomatch.update(create_fasta(subDF, outputfile, fasta_dict))
-    # matched = len(df_list) - len(nomatch)
-    # print(f"{len(nomatch)} subtypes were NOT matched to consensus sequences")
-    # print(f"{matched} subtypes WERE matched to consensus sequences")
 
 if __name__ == "__main__":
     main(sys.argv[1:])
