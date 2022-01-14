@@ -13,6 +13,7 @@ __maintainer__ = "Greg Linchangco"
 __email__ = "gvl@lanl.gov"
 __status__ = "Alpha-Testing"
 
+from enum import unique
 import sys,os,getopt,collections,subprocess
 import pandas as pd
 
@@ -151,8 +152,10 @@ def sortUniqueSubtypeSeqs(fastaFile:str,splitC:str,ind:list,coords:dict=None) ->
     for seq_id,seq in readFasta(fastaFile):
         header_list = seq_id.split(splitC)
         subtype = header_list[ind[0]]
-        patient = header_list[ind[1]]
-        unique_key = (subtype,patient)
+        unique_key = subtype
+        if len(ind) > 1:                                # differentiate between consensus and query
+            patient = header_list[ind[1]]
+            unique_key = (subtype,patient)
         if unique_key not in fasta_dict:
             fasta_dict[unique_key][seq_id] = seq
         elif unique_key in fasta_dict and seq_id not in fasta_dict[unique_key]:
@@ -220,7 +223,7 @@ def main(argv):
     # Read in gene coordinate map of tabular format: name    start    end
     coordDF = multi_parse(coordMap, header_row=0)
     coords = dict(zip((coordDF.start,coordDF.end), coordDF.name))
-    consensus_dict = sortUniqueSubtypeSeqs(inFile,'.',[0,6])
+    consensus_dict = sortUniqueSubtypeSeqs(inFile,'_',[0])
     findAndWriteSubtypes(fastaFile,outputfile,consensus_dict,coords)
  
 
