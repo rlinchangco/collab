@@ -137,6 +137,23 @@ def readFasta(fastaFile):
         yield fasta.id, str(fasta.seq)
 
 
+def findWithinXPer(seq_ind:int,gene_ind:int,threshold:float=0.90):
+    """
+    Find if query position is within X% of consensus position
+    """
+    test_list = [seq_ind,gene_ind]
+    if seq_ind != gene_ind:
+        hi_val_ind = max(test_list)
+        lo_val_ind = min(test_list)
+        test_val = lo_val_ind / hi_val_ind
+        if test_val >= threshold:
+            return True
+        else:
+            return False
+    else:
+        return True
+
+
 def sortUniqueSubtypeSeqs(fastaFile:str,splitC:str,ind:list,coords:dict=None) -> collections.defaultdict:
     """
     Takes in fasta file and yields each header and sequence.
@@ -147,6 +164,9 @@ def sortUniqueSubtypeSeqs(fastaFile:str,splitC:str,ind:list,coords:dict=None) ->
     Filter by:
     start/end coordinates (14,15)
     """
+    coord_list = None
+    if coords:
+        coord_list = list(map(list, zip(*coords)))         # unpack dictionary keys, unpack list of tuples to list of lists
     fasta_dict = collections.defaultdict(dict)
     fcounter = 0
     kept_counter = 0
@@ -160,14 +180,20 @@ def sortUniqueSubtypeSeqs(fastaFile:str,splitC:str,ind:list,coords:dict=None) ->
             patient = header_list[ind[1]]
             unique_key = (subtype,patient)
         if coords:                                      # filter by coordinate map
-            if coords.get((start,end)):                 # if seq coords in coord map, keep. Expects exact match...
-                if unique_key not in fasta_dict:
-                    fasta_dict[unique_key][seq_id] = seq
-                elif unique_key in fasta_dict and seq_id not in fasta_dict[unique_key]:
-                    fasta_dict[unique_key][seq_id] = seq
-                else:
-                    print(f"DUPLICATE Sequence ID:\t{seq_id}")
-                kept_counter += 1
+            #if coords.get((start,end)):                 # if seq coords in coord map, keep. Expects exact match...
+            for i in len(coord_list[0]):                # checks if within x percent of start and end coordinates (takes longer)
+                gene_start = coord_list[0][i]
+                gene_end = coord_list[1][i]
+                test_start = findWithinXPer(start,gene_start)
+                test_end = findWithinXPer(end,gene_end)
+                if test_start and test_end:
+                    if unique_key not in fasta_dict:
+                        fasta_dict[unique_key][seq_id] = seq
+                    elif unique_key in fasta_dict and seq_id not in fasta_dict[unique_key]:
+                        fasta_dict[unique_key][seq_id] = seq
+                    else:
+                        print(f"DUPLICATE Sequence ID:\t{seq_id}")
+                    kept_counter += 1
         fcounter += 1
     print(f"Total seqs in {fastaFile}:\t{fcounter}")
     print(f"Total seqs kept {fastaFile}:\t{kept_counter}")
