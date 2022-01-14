@@ -149,21 +149,28 @@ def sortUniqueSubtypeSeqs(fastaFile:str,splitC:str,ind:list,coords:dict=None) ->
     """
     fasta_dict = collections.defaultdict(dict)
     fcounter = 0
+    kept_counter = 0
     for seq_id,seq in readFasta(fastaFile):
         header_list = seq_id.split(splitC)
         subtype = header_list[ind[0]]
         unique_key = subtype
+        start = header_list[-2]
+        end = header_list[-1]
         if len(ind) > 1:                                # differentiate between consensus and query
             patient = header_list[ind[1]]
             unique_key = (subtype,patient)
-        if unique_key not in fasta_dict:
-            fasta_dict[unique_key][seq_id] = seq
-        elif unique_key in fasta_dict and seq_id not in fasta_dict[unique_key]:
-            fasta_dict[unique_key][seq_id] = seq
-        else:
-            print(f"DUPLICATE Sequence ID:\t{seq_id}")
+        if coords:                                      # filter by coordinate map
+            if coords.get((start,end)):                 # if seq coords in coord map, keep. Expects exact match...
+                if unique_key not in fasta_dict:
+                    fasta_dict[unique_key][seq_id] = seq
+                elif unique_key in fasta_dict and seq_id not in fasta_dict[unique_key]:
+                    fasta_dict[unique_key][seq_id] = seq
+                else:
+                    print(f"DUPLICATE Sequence ID:\t{seq_id}")
+                kept_counter += 1
         fcounter += 1
     print(f"Total seqs in {fastaFile}:\t{fcounter}")
+    print(f"Total seqs kept {fastaFile}:\t{kept_counter}")
     print(f"Unique subtypes in {fastaFile}:\t{len(fasta_dict)}")
     return fasta_dict
 
